@@ -1,0 +1,286 @@
+
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap");
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: dark;
+  --bg: #0b0d0c;
+  --panel: #121513;
+  --border: #252a26;
+  --text: #edf0ec;
+  --muted: #858d86;
+  --accent: #c6f36a;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "DM Sans", Arial, sans-serif;
+}
+
+.dashboard {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+}
+
+.sidebar {
+  padding: 30px 20px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.brand {
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+
+.brand span {
+  color: var(--accent);
+}
+
+.muted,
+.subtitle,
+.metric p,
+.empty p,
+footer {
+  color: var(--muted);
+}
+
+.muted {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+}
+
+nav {
+  display: grid;
+  gap: 8px;
+}
+
+nav a {
+  padding: 12px;
+  color: #a8afa9;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+nav a:hover,
+.nav-active {
+  background: #202720;
+  color: var(--accent);
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.content {
+  padding: 38px;
+  min-width: 0;
+}
+
+.topbar,
+.metric-top,
+.section-heading,
+.notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+h1 {
+  font-size: clamp(25px, 3vw, 34px);
+  letter-spacing: -1.2px;
+  margin: 10px 0;
+}
+
+.subtitle {
+  font-size: 13px;
+}
+
+.status {
+  border: 1px solid var(--border);
+  padding: 9px 12px;
+  border-radius: 30px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e8bd65;
+  margin-right: 7px;
+}
+
+.notice {
+  margin-top: 30px;
+  padding: 22px;
+  background: #151b14;
+  border: 1px solid #303c29;
+  border-radius: 12px;
+}
+
+.notice p {
+  color: #a5ada2;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.notice a {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  color: var(--accent);
+  font-size: 12px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.section-heading {
+  margin: 34px 0 16px;
+}
+
+h2 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.section-heading span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.metric,
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  min-width: 0;
+}
+
+.metric-top {
+  color: #a6aea7;
+  font-size: 12px;
+}
+
+.metric-top svg {
+  color: var(--accent);
+}
+
+.metric-value {
+  display: block;
+  font-size: 28px;
+  margin-top: 24px;
+}
+
+.metric p {
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.empty {
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+  color: var(--muted);
+}
+
+.empty svg {
+  color: #66745b;
+}
+
+.empty strong {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.empty p {
+  font-size: 11px;
+  max-width: 250px;
+  line-height: 1.7;
+}
+
+footer {
+  margin-top: 30px;
+  font-size: 11px;
+}
+
+@media (max-width: 1050px) {
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    padding: 18px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .sidebar-bottom {
+    display: none;
+  }
+
+  .content {
+    padding: 22px 16px;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .notice {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
