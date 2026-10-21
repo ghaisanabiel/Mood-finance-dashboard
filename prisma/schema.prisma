@@ -1,0 +1,264 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// All money is integer rupiah stored as BigInt. All timestamps are UTC.
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  RETURNED
+}
+
+enum DataSource {
+  SHOPEE_API
+  CSV_IMPORT
+  MANUAL
+}
+
+enum SyncKind {
+  ORDERS
+  PRODUCTS_INVENTORY
+  SETTLEMENT
+  ADVERTISING
+}
+
+enum SyncStatus {
+  RUNNING
+  SUCCEEDED
+  PARTIAL
+  FAILED
+}
+
+enum ExpenseCategory {
+  PACKAGING
+  FULFILLMENT
+  SALARY
+  SOFTWARE
+  OTHER
+}
+
+enum MovementType {
+  PURCHASE
+  SALE
+  RETURN
+  ADJUSTMENT
+}
+
+model Product {
+  id           String            @id @default(cuid())
+  sku          String            @unique
+  name         String
+  sellingPrice BigInt?
+  createdAt    DateTime          @default(now())
+  costs        ProductCost[]
+  components   BundleComponent[]
+  items        OrderItem[]
+  movements    InventoryMovement[]
+}
+
+// Unit cost over time, so changing a cost never rewrites history.
+model ProductCost {
+  id            String   @id @default(cuid())
+  productId     String
+  unitCost      BigInt
+  effectiveFrom DateTime
+  product       Product  @relation(fields: [productId], references: [id])
+
+  @@unique([productId, effectiveFrom])
+}
+
+model Bundle {
+  id             String            @id @default(cuid())
+  sku            String            @unique
+  name           String
+  extraDirectCost BigInt           @default(0)
+  components     BundleComponent[]
+  items          OrderItem[]
+}
+
+model BundleComponent {
+  id        String  @id @default(cuid())
+  bundleId  String
+  productId String
+  quantity  Int
+  bundle    Bundle  @relation(fields: [bundleId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@unique([bundleId, productId])
+}
+
+model ShopeeConnection {
+  id                String     @id @default(cuid())
+  shopId            BigInt     @unique
+  region            String     @default("ID")
+  accessTokenEnc    String
+  refreshTokenEnc   String
+  accessExpiresAt   DateTime
+  refreshExpiresAt  DateTime?
+  status            String     @default("ACTIVE")
+  connectedAt       DateTime   @default(now())
+  disconnectedAt    DateTime?
+}
+
+model Order {
+  id              String           @id @default(cuid())
+  shopId          BigInt
+  externalOrderSn String
+  status          OrderStatus
+  placedAt        DateTime
+  completedAt     DateTime?
+  source          DataSource
+  rawPayload      Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  items           OrderItem[]
+  finance         OrderFinance?
+  adjustments     RefundAdjustment[]
+
+  @@unique([shopId, externalOrderSn])
+  @@index([shopId, placedAt])
+  @@index([status])
+}
+
+model OrderItem {
+  id             String   @id @default(cuid())
+  orderId        String
+  externalItemId String
+  productId      String?
+  bundleId       String?
+  quantity       Int
+  unitPrice      BigInt
+  order          Order    @relation(fields: [orderId], references: [id])
+  product        Product? @relation(fields: [productId], references: [id])
+  bundle         Bundle?  @relation(fields: [bundleId], references: [id])
+
+  @@unique([orderId, externalItemId])
+}
+
+model OrderFinance {
+  id               String     @id @default(cuid())
+  orderId          String     @unique
+  grossSales       BigInt
+  sellerDiscount   BigInt    @default(0)
+  platformSubsidy  BigInt    @default(0)
+  commissionFee    BigInt    @default(0)
+  serviceFee       BigInt    @default(0)
+  sellerShippingFee BigInt   @default(0)
+  settledAmount    BigInt?
+  settledAt        DateTime?
+  source           DataSource
+  updatedAt        DateTime   @updatedAt
+  order            Order      @relation(fields: [orderId], references: [id])
+}
+
+model RefundAdjustment {
+  id          String     @id @default(cuid())
+  orderId     String
+  externalRef String
+  kind        String
+  amount      BigInt
+  occurredAt  DateTime
+  source      DataSource
+  order       Order      @relation(fields: [orderId], references: [id])
+
+  @@unique([orderId, externalRef])
+}
+
+model AdvertisingDailyMetric {
+  id              String     @id @default(cuid())
+  shopId          BigInt
+  day             DateTime   @db.Date
+  campaignKey     String
+  spend           BigInt
+  attributedSales BigInt?
+  impressions     Int?
+  clicks          Int?
+  source          DataSource
+
+  @@unique([shopId, day, campaignKey])
+}
+
+model Expense {
+  id         String          @id @default(cuid())
+  occurredAt DateTime
+  category   ExpenseCategory
+  amount     BigInt
+  note       String?
+  source     DataSource      @default(MANUAL)
+}
+
+model InventoryMovement {
+  id         String       @id @default(cuid())
+  productId  String
+  type       MovementType
+  quantity   Int          // signed: purchases positive, sales negative
+  unitCost   BigInt?
+  occurredAt DateTime
+  note       String?
+  product    Product      @relation(fields: [productId], references: [id])
+
+  @@index([productId, occurredAt])
+}
+
+model CashAccount {
+  id             String            @id @default(cuid())
+  name           String
+  openingBalance BigInt
+  openingAt      DateTime
+  transactions   CashTransaction[]
+}
+
+model CashTransaction {
+  id          String      @id @default(cuid())
+  accountId   String
+  amount      BigInt      // signed: inflow positive, outflow negative
+  occurredAt  DateTime
+  description String?
+  source      DataSource  @default(MANUAL)
+  account     CashAccount @relation(fields: [accountId], references: [id])
+
+  @@index([accountId, occurredAt])
+}
+
+model SyncRun {
+  id         String     @id @default(cuid())
+  shopId     BigInt
+  kind       SyncKind
+  status     SyncStatus
+  startedAt  DateTime   @default(now())
+  finishedAt DateTime?
+  stats      Json?
+  error      String?
+
+  @@index([shopId, kind, startedAt])
+}
+
+model SyncCursor {
+  id        String   @id @default(cuid())
+  shopId    BigInt
+  kind      SyncKind
+  cursor    String
+  updatedAt DateTime @updatedAt
+
+  @@unique([shopId, kind])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actor     String
+  action    String
+  entity    String
+  entityId  String?
+  before    Json?
+  after     Json?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+}
